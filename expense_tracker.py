@@ -13,18 +13,39 @@ def save_expenses(expenses):
 
 
 def get_total(expenses):
-    """Add up the total of all expenses. (Coming in Step 3)"""
-    return 0
+    """Add up the total of all expenses."""
+    total = 0
+    for expense in expenses:
+        total += expense["amount"]
+    return total
 
 
 def add_expense(expenses):
-    """Ask the user for an expense and store it. (Coming in Step 3)"""
-    print("Not built yet.\n")
+    """Ask the user for an expense and store it in the list."""
+    name = input("What did you spend on? ").strip()
+    if not name:
+        print("Expense name can't be empty.\n")
+        return
+    try:
+        amount = float(input("How much? "))
+    except ValueError:
+        print("That's not a valid number. Expense not added.\n")
+        return
+    expenses.append({"name": name, "amount": amount})
+    save_expenses(expenses)
+    print(f"Added: {name} - {amount:.2f}\n")
 
 
 def view_expenses(expenses):
-    """Display all expenses plus the total. (Coming in Step 3)"""
-    print("Not built yet.\n")
+    """Display all expenses plus the total."""
+    if not expenses:
+        print("No expenses recorded yet.\n")
+        return
+    print("\n--- Your Expenses ---")
+    for i, expense in enumerate(expenses, start=1):
+        print(f"{i}. {expense['name']:<20} {expense['amount']:>10.2f}")
+    print("-" * 33)
+    print(f"{'TOTAL':<21} {get_total(expenses):>10.2f}\n")
 
 
 def edit_expense(expenses):
