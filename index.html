@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expense Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;900&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#F4F3EE;--receipt:#FDFCF8;--ink:#232019;--faded:#8B867A;
+    --green:#1E6B4A;--green-dark:#145036;--line:#DDD9CE;--danger:#A63D2F}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:'IBM Plex Mono',monospace}
+  .wrap{max-width:960px;margin:0 auto;padding:28px 20px 64px}
+  .masthead{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;
+    gap:8px;border-bottom:3px solid var(--ink);padding-bottom:14px;margin-bottom:26px}
+  .masthead h1{font-family:'Archivo',sans-serif;font-weight:900;
+    font-size:clamp(26px,5vw,40px);text-transform:uppercase}
+  .masthead .tag{font-size:12px;color:var(--faded);letter-spacing:.12em;text-transform:uppercase}
+  .grid{display:grid;grid-template-columns:1fr 1.15fr;gap:28px;align-items:start}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--receipt);border:1.5px solid var(--ink);padding:22px}
+  .panel h2{font-family:'Archivo',sans-serif;font-size:14px;letter-spacing:.14em;
+    text-transform:uppercase;margin-bottom:6px}
+  label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--faded);margin:14px 0 5px}
+  input{width:100%;font-family:inherit;font-size:16px;padding:10px 12px;
+    border:1.5px solid var(--ink);background:#fff;border-radius:0}
+  input:focus{outline:3px solid var(--green);outline-offset:1px}
+  .btn{font-family:'Archivo',sans-serif;font-weight:700;letter-spacing:.1em;
+    text-transform:uppercase;font-size:13px;border:1.5px solid var(--ink);
+    background:var(--green);color:#fff;padding:12px 18px;margin-top:18px;width:100%;cursor:pointer}
+  .btn:hover{background:var(--green-dark)}
+  .row2{display:flex;gap:10px}
+  .row2 .grow{flex:1}
+  .row2 .cur{width:88px}
+  .hint{font-size:11px;color:var(--faded);margin-top:12px;line-height:1.6}
+  .receipt{background:var(--receipt);border:1.5px solid var(--ink);border-bottom:none;
+    padding:24px 22px 8px;box-shadow:6px 6px 0 rgba(35,32,25,.12)}
+  .receipt-head{text-align:center;border-bottom:1.5px dashed var(--ink);
+    padding-bottom:14px;margin-bottom:6px}
+  .receipt-head .store{font-family:'Archivo',sans-serif;font-weight:900;
+    font-size:18px;text-transform:uppercase}
+  .receipt-head .meta{font-size:11px;color:var(--faded);margin-top:4px}
+  .rows{list-style:none;max-height:380px;overflow-y:auto}
+  .row{display:flex;align-items:center;gap:8px;padding:9px 2px;
+    border-bottom:1px dotted var(--line);font-size:14px}
+  .row .name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .amt{font-weight:700;white-space:nowrap}
+  .row .tools{display:flex;gap:4px;opacity:.35}
+  .row:hover .tools,.row:focus-within .tools{opacity:1}
+  .icon-btn{border:1px solid var(--ink);background:#fff;font-family:inherit;
+    font-size:11px;padding:3px 7px;cursor:pointer}
+  .icon-btn:hover{background:var(--ink);color:#fff}
+  .icon-btn.del:hover{background:var(--danger);border-color:var(--danger)}
+  .totals{border-top:1.5px dashed var(--ink);margin-top:6px;padding:12px 2px 4px}
+  .totals .line{display:flex;justify-content:space-between;font-size:12px;
+    color:var(--faded);padding:2px 0}
+  .totals .grand{display:flex;justify-content:space-between;
+    font-family:'Archivo',sans-serif;font-weight:900;font-size:22px;padding-top:8px}
+  .thanks{text-align:center;font-size:11px;color:var(--faded);letter-spacing:.2em;
+    text-transform:uppercase;padding:14px 0 10px}
+  .tear{height:14px;background:var(--receipt);border-left:1.5px solid var(--ink);
+    border-right:1.5px solid var(--ink);box-shadow:6px 6px 0 rgba(35,32,25,.12);
+    mask:radial-gradient(circle at 8px 14px,transparent 7px,#000 7.5px) repeat-x;
+    mask-size:16px 14px;-webkit-mask:radial-gradient(circle at 8px 14px,transparent 7px,#000 7.5px) repeat-x;
+    -webkit-mask-size:16px 14px}
+  .empty{text-align:center;color:var(--faded);font-size:13px;padding:34px 8px;line-height:1.7}
+  .status{min-height:18px;font-size:11px;color:var(--green);margin-top:10px}
+  .status.err{color:var(--danger)}
+  .editing{background:#FFF7DF}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <h1>Expense Tracker</h1>
+    <span class="tag">Every franc accounted for</span>
+  </header>
+  <div class="grid">
+    <section class="panel">
+      <h2 id="form-title">Add expense</h2>
+      <label for="name">What you spent on</label>
+      <input id="name" type="text" placeholder="e.g. Lunch" autocomplete="off">
+      <div class="row2">
+        <div class="grow">
+          <label for="amount">Amount</label>
+          <input id="amount" type="number" min="0" step="any" placeholder="0.00">
+        </div>
+        <div class="cur">
+          <label for="currency">Currency</label>
+          <input id="currency" type="text" maxlength="4" value="RWF">
+        </div>
+      </div>
+      <button class="btn" id="submit">Print it on the receipt</button>
+      <div class="status" id="status" role="status"></div>
+      <p class="hint">Expenses save automatically in this browser. Hover a line to edit or remove it.</p>
+    </section>
+    <section>
+      <div class="receipt">
+        <div class="receipt-head">
+          <div class="store">*** Your Spending ***</div>
+          <div class="meta" id="meta">No expenses yet</div>
+        </div>
+        <ul class="rows" id="rows"></ul>
+        <div class="totals" id="totals" hidden>
+          <div class="line"><span>Items</span><span id="count">0</span></div>
+          <div class="grand"><span>Total</span><span id="total">0.00</span></div>
+        </div>
+        <div class="thanks">- Thank you, come again -</div>
+      </div>
+      <div class="tear"></div>
+    </section>
+  </div>
+</div>
+<script>
+var KEY = 'expense-tracker-v1';
+var state = { expenses: [], currency: 'RWF' };
+var editingId = null;
+
+function $(id){ return document.getElementById(id); }
+function fmt(n){ return n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function load(){
+  try{
+    var raw = localStorage.getItem(KEY);
+    if(raw) state = JSON.parse(raw);
+  }catch(e){}
+  $('currency').value = state.currency || 'RWF';
+  render();
+}
+
+function persist(){
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); }
+  catch(e){ setStatus('Could not save.', true); }
+}
+
+function setStatus(msg, isErr){
+  var s = $('status');
+  s.textContent = msg;
+  s.className = 'status' + (isErr ? ' err' : '');
+  setTimeout(function(){ if(s.textContent===msg) s.textContent=''; }, 3000);
+}
+
+function render(){
+  var rows = $('rows');
+  rows.innerHTML = '';
+  var cur = state.currency;
+  if(state.expenses.length === 0){
+    rows.innerHTML = '<li class="empty">Nothing printed yet.<br>Add your first expense to start the receipt.</li>';
+    $('totals').hidden = true;
+    $('meta').textContent = 'No expenses yet';
+    return;
+  }
+  state.expenses.forEach(function(e){
+    var li = document.createElement('li');
+    li.className = 'row' + (e.id===editingId ? ' editing' : '');
+    var name = document.createElement('span');
+    name.className = 'name'; name.textContent = e.name;
+    var amt = document.createElement('span');
+    amt.className = 'amt'; amt.textContent = fmt(e.amount) + ' ' + cur;
+    var tools = document.createElement('span');
+    tools.className = 'tools';
+    var eb = document.createElement('button');
+    eb.className = 'icon-btn'; eb.textContent = 'edit';
+    eb.onclick = function(){ startEdit(e.id); };
+    var db = document.createElement('button');
+    db.className = 'icon-btn del'; db.textContent = 'del';
+    db.onclick = function(){ remove(e.id); };
+    tools.appendChild(eb); tools.appendChild(db);
+    li.appendChild(name); li.appendChild(amt); li.appendChild(tools);
+    rows.appendChild(li);
+  });
+  var total = state.expenses.reduce(function(s,e){ return s + e.amount; }, 0);
+  $('count').textContent = state.expenses.length;
+  $('total').textContent = fmt(total) + ' ' + cur;
+  $('totals').hidden = false;
+  $('meta').textContent = state.expenses.length + ' item' + (state.expenses.length>1?'s':'') + ' on record';
+}
+
+function submit(){
+  var name = $('name').value.trim();
+  var amount = parseFloat($('amount').value);
+  state.currency = ($('currency').value.trim() || 'RWF').toUpperCase();
+  if(!name){ setStatus('Give the expense a name.', true); return; }
+  if(isNaN(amount) || amount < 0){ setStatus('Enter a valid amount.', true); return; }
+  if(editingId){
+    for(var i=0;i<state.expenses.length;i++){
+      if(state.expenses[i].id===editingId){
+        state.expenses[i].name = name;
+        state.expenses[i].amount = amount;
+      }
+    }
+    setStatus('Updated & saved.');
+    stopEdit();
+  }else{
+    state.expenses.push({ id: Date.now() + '' + Math.floor(Math.random()*1000), name: name, amount: amount });
+    setStatus('Printed & saved.');
+  }
+  $('name').value=''; $('amount').value='';
+  render(); persist(); $('name').focus();
+}
+
+function startEdit(id){
+  var e = null;
+  for(var i=0;i<state.expenses.length;i++){ if(state.expenses[i].id===id) e = state.expenses[i]; }
+  if(!e) return;
+  editingId = id;
+  $('name').value = e.name;
+  $('amount').value = e.amount;
+  $('form-title').textContent = 'Edit expense';
+  $('submit').textContent = 'Save changes';
+  render(); $('name').focus();
+}
+
+function stopEdit(){
+  editingId = null;
+  $('form-title').textContent = 'Add expense';
+  $('submit').textContent = 'Print it on the receipt';
+}
+
+function remove(id){
+  state.expenses = state.expenses.filter(function(x){ return x.id!==id; });
+  if(editingId===id){ stopEdit(); $('name').value=''; $('amount').value=''; }
+  setStatus('Removed & saved.');
+  render(); persist();
+}
+
+$('submit').onclick = submit;
+$('name').addEventListener('keydown', function(ev){ if(ev.key==='Enter') submit(); });
+$('amount').addEventListener('keydown', function(ev){ if(ev.key==='Enter') submit(); });
+$('currency').addEventListener('change', function(){
+  state.currency = ($('currency').value.trim()||'RWF').toUpperCase();
+  render(); persist();
+});
+load();
+</script>
+</body>
+</html>
